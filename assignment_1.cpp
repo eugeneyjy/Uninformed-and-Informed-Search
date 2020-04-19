@@ -8,6 +8,7 @@
 #include <fstream>
 #include <deque>
 #include <algorithm>    // std::find
+#include <limits.h>
 
 using namespace std;
 
@@ -234,6 +235,7 @@ void delete_graph(){
   for(int i = 0; i < graph.size(); i++){
     delete graph[i];
   }
+  graph.clear();
 }
 
 bool bfs(struct State init_state, int& count){
@@ -285,6 +287,27 @@ bool dls(struct State init_state, int& count, int limit){
   }
 }
 
+
+bool dfs(struct State init_state, int& count){
+  return dls(init_state, count, INT_MAX);
+}
+
+bool iddfs(struct State init_state, int& count){
+  int curr_limit = 0;
+  int limit = INT_MAX;
+  bool success;
+  while(curr_limit < limit){
+    cout << "curr_limit: " << curr_limit << endl;
+    success = dls(init_state, count, curr_limit);
+    if(success){
+      return true;
+    }else{
+      curr_limit++;
+      delete_graph();
+    }
+  }
+}
+
 void print_result(bool success, vector<struct State> solution, int expanded){
   if(success){
     print_states(solution);
@@ -298,13 +321,13 @@ int main(int argc, char* argv[]){
   valid_argc(argc);
   struct State init_state;
   vector<struct State> solution;
-  int limit = 2147483647;
   bool success;
   int count = 0;
   read_file(1, argv, init_state);
   read_file(2, argv, goal_state);
   // success = bfs(init_state, count);
-  success = dls(init_state, count, limit);
+  // success = dfs(init_state, count);
+  success = iddfs(init_state, count);
   solution = form_solution();
   print_result(success, solution, count);
   delete_graph();
