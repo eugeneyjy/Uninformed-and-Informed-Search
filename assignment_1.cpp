@@ -18,6 +18,7 @@ struct Bank{
 };
 
 struct State{
+  int depth = 0;
   struct Bank l_bank; // Left bank
   struct Bank r_bank; // Right bank
   struct State* parent = NULL; // keep track on parent state
@@ -138,6 +139,7 @@ void cp_state(struct State* state_1, struct State state_2){
   state_1->r_bank.wolves = state_2.r_bank.wolves;
   state_1->r_bank.boat = state_2.r_bank.boat;
   state_1->parent = state_2.parent;
+  state_1->depth = state_2.depth;
 }
 
 // Generate successor states reachable from state
@@ -147,6 +149,7 @@ void cp_state(struct State* state_1, struct State state_2){
   for(int i = 0; i < 5; i++){
     cp_state(&states[i], *state);
     states[i].parent = state;
+    states[i].depth = state->depth + 1;
   }
   // Do action to each successor, put into successors if valid
   for(int i = 0; i < 5; i++){
@@ -207,7 +210,6 @@ bool isInsets(deque<struct State> frontier,deque<struct State> explored,struct S
 		}
 	}
 	return false;
-
 }
 
 void pull(deque<struct State> &frontier,deque<struct State> explored,vector<struct State> tep){
@@ -257,10 +259,38 @@ bool bfs(struct State init_state, int& count){
   }
 }
 
+bool dls(struct State init_state, int& count, int limit){
+  deque<struct State> frontier;
+  deque<struct State> explored;
+  int depth = 0;
+  struct State* curr_state;
+  frontier.push_back(init_state);
+  while(1){
+    if(frontier.empty()){
+      return false;
+    }
+    curr_state = new struct State;
+    cp_state(curr_state, frontier.back());
+    graph.push_back(curr_state);
+    frontier.pop_back();
+    if(isgoal(*(graph.back()))){
+      return true;
+    }
+    count++;
+    explored.push_back(*(graph.back()));
+    if(curr_state->depth < limit){
+      vector<struct State> temp = succ(graph.back());
+      pull(frontier, explored, temp);
+    }
+  }
+}
+
 void print_result(bool success, vector<struct State> solution, int expanded){
   if(success){
     print_states(solution);
     cout << expanded << " nodes expanded" << endl;
+  }else{
+    cout << "No solution found" << endl;
   }
 }
 
@@ -268,11 +298,13 @@ int main(int argc, char* argv[]){
   valid_argc(argc);
   struct State init_state;
   vector<struct State> solution;
+  int limit = 2147483647;
   bool success;
   int count = 0;
   read_file(1, argv, init_state);
   read_file(2, argv, goal_state);
-  success = bfs(init_state, count);
+  // success = bfs(init_state, count);
+  success = dls(init_state, count, limit);
   solution = form_solution();
   print_result(success, solution, count);
   delete_graph();
