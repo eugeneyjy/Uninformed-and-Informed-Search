@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <string>
 #include <sstream>
+#include <vector>
 #include <fstream>
 #include <queue>
 #include <algorithm>    // std::find
@@ -34,6 +35,7 @@ void valid_argc(int argc){
     exit(0);
   }
 }
+
 
 String print_state(struct State state){
   return  to_string(state.l_bank.chickens)+ ", " + to_string(state.l_bank.wolves) + ", " + to_string(state.l_bank.boat) +"\n" +to_string(state.r_bank.chickens)+ ", " + to_string(state.r_bank.wolves)+", " + to_string(state.r_bank.boat) + "\n";
@@ -67,24 +69,65 @@ void read_file(int index, char* argv[], struct State& state){
 
 // actions to generate successor according to act given in arguments
 void actions(struct State& state, int act){
-  if(act == 1){
+  if(act == 0){
     // Put one chickens in the boat
-  }else if(act == 2){
+    state.r_bank.chickens -= 1;
+    state.l_bank.chickens += 1;
+  }else if(act == 1){
     // Put two chickens in the boat
-  }else if(act == 3){
+    state.r_bank.chickens -= 2;
+    state.l_bank.chickens += 2;
+  }else if(act == 2){
     // Put one wolf in the boat
-  }else if(act == 4){
+    state.r_bank.wolves -= 1;
+    state.l_bank.wolves += 1;
+  }else if(act == 3){
     // Put one wolf one chicken in the boat
-  }else if(act == 5){
+    state.r_bank.wolves -= 1;
+    state.r_bank.chickens -= 1;
+    state.l_bank.wolves += 1;
+    state.l_bank.chickens += 1;
+  }else if(act == 4){
     // Put two wolves in the boat
+    state.r_bank.wolves -= 2;
+    state.l_bank.wolves += 2;
   }
+  state.l_bank.boat = !state.l_bank.boat;
+  state.r_bank.boat = !state.r_bank.boat;
+}
+
+bool check_state(struct State state){
+  if(state.l_bank.chickens < 0 || state.r_bank.chickens < 0 || state.l_bank.wolves < 0 || state.r_bank.wolves < 0){
+    return false;
+  }
+  if(state.l_bank.chickens != 0){
+    if(state.l_bank.chickens < state.l_bank.wolves){
+      return false;
+    }
+  }
+  if(state.r_bank.chickens != 0){
+    if(state.r_bank.chickens < state.r_bank.wolves){
+      return false;
+    }
+  }
+  return true;
 }
 
 // Generate successor states reachable from state
-struct State* succ(struct State state){
+ vector<struct State> succ(struct State state){
   struct State states[5];
-  struct State* successors;
+  vector<struct State> successors;
+  for(int i = 0; i < 5; i++){
+    states[i] = state;
+    states[i].parent = &state;
+  }
   // Do action to each successor, put into successors if valid
+  for(int i = 0; i < 5; i++){
+    actions(states[i], i);
+    if(check_state(states[i]) == true){
+      successors.push_back(states[i]);
+    }
+  }
   return successors;
 }
 
