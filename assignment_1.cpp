@@ -35,7 +35,7 @@ struct State{
 struct {
     bool operator()(State const& p1, State const& p2)
     {
-        return p1.cost < p2.cost;
+        return p1.cost > p2.cost;
     }
 } compareCost;
 
@@ -60,7 +60,7 @@ void print_states(vector<struct State> states,char* argv[]){
   ofstream myfile;
   myfile.open (argv[4]);
   for(int i = states.size()-1; i >= 0; i--){
-    cout << print_state(states[i]) << /*states[i].cost << " "<< states[i].hcost <<*/ endl;
+    cout << print_state(states[i]) <</* states[i].depth << " " << states[i].cost << " "<< states[i].hcost <<*/ endl;
     myfile << print_state(states[i]) << endl;
   }
   myfile.close();
@@ -346,7 +346,6 @@ bool iddfs(struct State init_state, int& count){
   int limit = INT_MAX;
   bool success;
   while(curr_limit < limit){
-    cout << "curr_limit: " << curr_limit << endl;
     success = dls(init_state, count, curr_limit);
     if(success){
       return true;
@@ -365,8 +364,6 @@ void print_result(bool success, vector<struct State> solution, int expanded,char
     cout << "No solution found" << endl;
   }
 }
-
-
 
 int main(int argc, char* argv[]){
   valid_argc(argc);
@@ -389,7 +386,6 @@ int main(int argc, char* argv[]){
   }else{
   	cout<<"third argument should be either bfs,dfs,iddfs or a*!"<<endl;
   }
-
 
   solution = form_solution();
   print_result(success, solution, count,argv);
