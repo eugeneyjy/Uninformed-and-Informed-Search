@@ -9,8 +9,11 @@
 #include <deque>
 #include <algorithm>    // std::find
 #include <limits.h>
+#include <queue> 
+
 
 using namespace std;
+
 
 struct Bank{
   int chickens;
@@ -18,12 +21,25 @@ struct Bank{
   bool boat;
 };
 
+
 struct State{
   int depth = 0;
   struct Bank l_bank; // Left bank
   struct Bank r_bank; // Right bank
   struct State* parent = NULL; // keep track on parent state
 };
+
+
+struct CompareCost { 
+    bool operator()(State const& p1, State const& p2) 
+    { 
+        // return "true" if "p1" is ordered  
+        // before "p2", for example: 
+        return p1.depth > p2.depth; 
+    } 
+}; 
+
+typedef priority_queue<State, deque<State>, CompareCost>  mypq_type;
 
 struct State goal_state;
 vector<struct State*> graph;
@@ -217,6 +233,8 @@ bool isInsets(deque<struct State> frontier,deque<struct State> explored,struct S
 	return false;
 }
 
+
+
 void pull(deque<struct State> &frontier,deque<struct State> explored,vector<struct State> tep){
 	for(int i = 0;i<tep.size();i++){
 		if(!isInsets(frontier,explored,tep.at(i))){
@@ -224,6 +242,12 @@ void pull(deque<struct State> &frontier,deque<struct State> explored,vector<stru
 		}
 	}
 }
+
+void pull2(mypq_type &frontier,mypq_type explored,vector<struct State> tep){
+	for(int i = 0;i<tep.size();i++){
+		frontier.push(tep.at(i));
+	}
+} 
 
 vector<struct State> form_solution(){
   vector<struct State> solution;
@@ -262,6 +286,32 @@ bool bfs(struct State init_state, int& count){
     explored.push_back(*(graph.back()));
     vector<struct State> temp = succ(graph.back());
     pull(frontier, explored, temp);
+  }
+}
+
+bool a(struct State init_state, int& count){
+  typedef priority_queue<State, deque<State>, CompareCost>  mypq_type;
+  mypq_type frontier; 
+  mypq_type explored; 
+  struct State* curr_state;
+  frontier.push(init_state);
+  while(1){
+    if(frontier.empty()){
+      return false;
+    }
+    curr_state = new struct State;
+    cp_state(curr_state, frontier.top());
+    cout<<print_state(frontier.top())<<endl;
+
+    graph.push_back(curr_state);
+    frontier.pop();
+    if(isgoal(*(graph.back()))){
+      return true;
+    }
+    count++;
+    explored.push(*(graph.back()));
+    vector<struct State> temp = succ(graph.back());
+    pull2(frontier, explored, temp);
   }
 }
 
@@ -339,6 +389,9 @@ int main(int argc, char* argv[]){
   	  success = dls(init_state, count, limit);
   }else if(strcmp(argv[3],"iddfs")==0){
   	  success = iddfs(init_state, count);
+  }else if(strcmp(argv[3],"a")==0){
+  	cout<<"2"<<endl;
+  	  success = a(init_state, count);
   }else{
   	cout<<"third argument should be either bfs,dfs,iddfs or a*!"<<endl;
   }
