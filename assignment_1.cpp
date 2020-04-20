@@ -9,7 +9,7 @@
 #include <deque>
 #include <algorithm>    // std::find
 #include <limits.h>
-#include <queue> 
+#include <queue>
 
 
 using namespace std;
@@ -24,22 +24,20 @@ struct Bank{
 
 struct State{
   int depth = 0;
+  int cost = INT_MAX;
+  int hcost = INT_MAX;
   struct Bank l_bank; // Left bank
   struct Bank r_bank; // Right bank
   struct State* parent = NULL; // keep track on parent state
 };
 
 
-struct CompareCost { 
-    bool operator()(State const& p1, State const& p2) 
-    { 
-        // return "true" if "p1" is ordered  
-        // before "p2", for example: 
-        return p1.depth > p2.depth; 
-    } 
-}; 
-
-typedef priority_queue<State, deque<State>, CompareCost>  mypq_type;
+struct {
+    bool operator()(State const& p1, State const& p2)
+    {
+        return p1.cost < p2.cost;
+    }
+} compareCost;
 
 struct State goal_state;
 vector<struct State*> graph;
@@ -54,7 +52,6 @@ void valid_argc(int argc){
   }
 }
 
-
 string print_state(struct State state){
   return  to_string(state.l_bank.chickens)+ ", " + to_string(state.l_bank.wolves) + ", " + to_string(state.l_bank.boat) +"\n" +to_string(state.r_bank.chickens)+ ", " + to_string(state.r_bank.wolves)+", " + to_string(state.r_bank.boat) + "\n";
 }
@@ -63,7 +60,7 @@ void print_states(vector<struct State> states,char* argv[]){
   ofstream myfile;
   myfile.open (argv[4]);
   for(int i = states.size()-1; i >= 0; i--){
-    cout << print_state(states[i]) << endl;
+    cout << print_state(states[i]) << /*states[i].cost << " "<< states[i].hcost <<*/ endl;
     myfile << print_state(states[i]) << endl;
   }
   myfile.close();
@@ -161,6 +158,8 @@ void cp_state(struct State* state_1, struct State state_2){
   state_1->r_bank.boat = state_2.r_bank.boat;
   state_1->parent = state_2.parent;
   state_1->depth = state_2.depth;
+  state_1->cost = state_2.cost;
+  state_1->hcost = state_2.hcost;
 }
 
 // Generate successor states reachable from state
@@ -180,14 +179,6 @@ void cp_state(struct State* state_1, struct State state_2){
     }
   }
   return successors;
-}
-
-// Write result to file at index position of argv
-void write_file(int index, char* argv[], struct State* states){
-  ofstream outfile;
-  outfile.open(argv[index]);
-  // Write result to file
-  outfile.close();
 }
 
 bool cmp_bank(struct Bank bank_1, struct Bank bank_2){
@@ -233,8 +224,6 @@ bool isInsets(deque<struct State> frontier,deque<struct State> explored,struct S
 	return false;
 }
 
-
-
 void pull(deque<struct State> &frontier,deque<struct State> explored,vector<struct State> tep){
 	for(int i = 0;i<tep.size();i++){
 		if(!isInsets(frontier,explored,tep.at(i))){
@@ -242,12 +231,6 @@ void pull(deque<struct State> &frontier,deque<struct State> explored,vector<stru
 		}
 	}
 }
-
-void pull2(mypq_type &frontier,mypq_type explored,vector<struct State> tep){
-	for(int i = 0;i<tep.size();i++){
-		frontier.push(tep.at(i));
-	}
-} 
 
 vector<struct State> form_solution(){
   vector<struct State> solution;
@@ -289,29 +272,41 @@ bool bfs(struct State init_state, int& count){
   }
 }
 
-bool a(struct State init_state, int& count){
-  typedef priority_queue<State, deque<State>, CompareCost>  mypq_type;
-  mypq_type frontier; 
-  mypq_type explored; 
+int heuristic(struct State state){
+  int h = 0;
+  h = (state.r_bank.chickens + state.r_bank.wolves)/2;
+  return h;
+}
+
+void setCost(vector<struct State>& state){
+  for(int i = 0; i < state.size(); i++){
+    state[i].hcost = heuristic(state[i]);
+    state[i].cost = state[i].depth + state[i].hcost;
+  }
+}
+
+bool astar(struct State init_state, int& count){
+  deque<struct State> frontier;
+  deque<struct State> explored;
   struct State* curr_state;
-  frontier.push(init_state);
+  frontier.push_back(init_state);
   while(1){
     if(frontier.empty()){
       return false;
     }
     curr_state = new struct State;
-    cp_state(curr_state, frontier.top());
-    cout<<print_state(frontier.top())<<endl;
-
+    cp_state(curr_state, frontier.back());
     graph.push_back(curr_state);
-    frontier.pop();
+    frontier.pop_back();
     if(isgoal(*(graph.back()))){
       return true;
     }
     count++;
-    explored.push(*(graph.back()));
+    explored.push_back(*(graph.back()));
     vector<struct State> temp = succ(graph.back());
-    pull2(frontier, explored, temp);
+    setCost(temp);
+    pull(frontier, explored, temp);
+    sort(frontier.begin(), frontier.end(), compareCost);
   }
 }
 
@@ -382,16 +377,15 @@ int main(int argc, char* argv[]){
   int count = 0;
   read_file(1, argv, init_state);
   read_file(2, argv, goal_state);
-  
+
   if(strcmp(argv[3],"bfs")==0){
    success = bfs(init_state, count);
   }else if(strcmp(argv[3],"dfs")==0){
   	  success = dls(init_state, count, limit);
   }else if(strcmp(argv[3],"iddfs")==0){
   	  success = iddfs(init_state, count);
-  }else if(strcmp(argv[3],"a")==0){
-  	cout<<"2"<<endl;
-  	  success = a(init_state, count);
+  }else if(strcmp(argv[3],"astar")==0){
+  	  success = astar(init_state, count);
   }else{
   	cout<<"third argument should be either bfs,dfs,iddfs or a*!"<<endl;
   }
