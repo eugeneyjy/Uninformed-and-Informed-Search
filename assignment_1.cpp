@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <string>
+#include <string.h>
 #include <sstream>
 #include <vector>
 #include <fstream>
@@ -43,10 +43,14 @@ string print_state(struct State state){
   return  to_string(state.l_bank.chickens)+ ", " + to_string(state.l_bank.wolves) + ", " + to_string(state.l_bank.boat) +"\n" +to_string(state.r_bank.chickens)+ ", " + to_string(state.r_bank.wolves)+", " + to_string(state.r_bank.boat) + "\n";
 }
 
-void print_states(vector<struct State> states){
+void print_states(vector<struct State> states,char* argv[]){
+  ofstream myfile;
+  myfile.open (argv[4]);
   for(int i = states.size()-1; i >= 0; i--){
     cout << print_state(states[i]) << endl;
+    myfile << print_state(states[i]) << endl;
   }
+  myfile.close();
 }
 
 void parse_line(string line, struct Bank& bank){
@@ -308,28 +312,40 @@ bool iddfs(struct State init_state, int& count){
   }
 }
 
-void print_result(bool success, vector<struct State> solution, int expanded){
+void print_result(bool success, vector<struct State> solution, int expanded,char* argv[]){
   if(success){
-    print_states(solution);
+    print_states(solution,argv);
     cout << expanded << " nodes expanded" << endl;
   }else{
     cout << "No solution found" << endl;
   }
 }
 
+
+
 int main(int argc, char* argv[]){
   valid_argc(argc);
   struct State init_state;
   vector<struct State> solution;
+  int limit = 2147483647;
   bool success;
   int count = 0;
   read_file(1, argv, init_state);
   read_file(2, argv, goal_state);
-  // success = bfs(init_state, count);
-  // success = dfs(init_state, count);
-  success = iddfs(init_state, count);
+  
+  if(strcmp(argv[3],"bfs")==0){
+   success = bfs(init_state, count);
+  }else if(strcmp(argv[3],"dfs")==0){
+  	  success = dls(init_state, count, limit);
+  }else if(strcmp(argv[3],"iddfs")==0){
+  	  success = iddfs(init_state, count);
+  }else{
+  	cout<<"third argument should be either bfs,dfs,iddfs or a*!"<<endl;
+  }
+
+
   solution = form_solution();
-  print_result(success, solution, count);
+  print_result(success, solution, count,argv);
   delete_graph();
   return 0;
 }
