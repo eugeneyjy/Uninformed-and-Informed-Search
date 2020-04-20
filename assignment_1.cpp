@@ -35,7 +35,13 @@ struct CompareCost {
     { 
         // return "true" if "p1" is ordered  
         // before "p2", for example: 
-        return p1.depth > p2.depth; 
+        if((p1.l_bank.chickens+p1.l_bank.wolves)-(p1.r_bank.chickens+p1.r_bank.wolves) < (p2.l_bank.chickens+p2.l_bank.wolves)-(p2.r_bank.chickens+p2.r_bank.wolves)){
+        	return true;
+		}else if((p1.l_bank.chickens+p1.l_bank.wolves)-(p1.r_bank.chickens+p1.r_bank.wolves) = (p2.l_bank.chickens+p2.l_bank.wolves)-(p2.r_bank.chickens+p2.r_bank.wolves)){
+			return p1.depth>p2.depth;
+		}else{
+			return false;
+		}
     } 
 }; 
 
@@ -233,6 +239,16 @@ bool isInsets(deque<struct State> frontier,deque<struct State> explored,struct S
 	return false;
 }
 
+bool isInsets2(deque<struct State> explored,struct State tep){
+
+	for(int n=0;n<explored.size();n++){
+		if(cmp_state(tep, explored.at(n))){
+			return true;
+		}
+	}
+	return false;
+}
+
 
 
 void pull(deque<struct State> &frontier,deque<struct State> explored,vector<struct State> tep){
@@ -243,9 +259,11 @@ void pull(deque<struct State> &frontier,deque<struct State> explored,vector<stru
 	}
 }
 
-void pull2(mypq_type &frontier,mypq_type explored,vector<struct State> tep){
+void pull2(mypq_type &frontier,deque<struct State>  explored,vector<struct State> tep){
 	for(int i = 0;i<tep.size();i++){
-		frontier.push(tep.at(i));
+		if(!isInsets2(explored,tep.at(i))){
+			frontier.push(tep.at(i));
+		}	
 	}
 } 
 
@@ -291,27 +309,36 @@ bool bfs(struct State init_state, int& count){
 
 bool a(struct State init_state, int& count){
   typedef priority_queue<State, deque<State>, CompareCost>  mypq_type;
-  mypq_type frontier; 
-  mypq_type explored; 
+  mypq_type frontier_l;
+  mypq_type frontier_r;
+  bool left=false; 
+  deque<struct State> explored; 
   struct State* curr_state;
-  frontier.push(init_state);
+  frontier_l.push(init_state);
   while(1){
     if(frontier.empty()){
       return false;
     }
     curr_state = new struct State;
-    cp_state(curr_state, frontier.top());
+    if(left){
+    	cp_state(curr_state, frontier_r.top());
+	}else{
+		cp_state(curr_state, frontier_l.top());
+	}
     cout<<print_state(frontier.top())<<endl;
-
     graph.push_back(curr_state);
     frontier.pop();
     if(isgoal(*(graph.back()))){
       return true;
     }
     count++;
-    explored.push(*(graph.back()));
+    explored.push_back(*(graph.back()));
     vector<struct State> temp = succ(graph.back());
-    pull2(frontier, explored, temp);
+    if(left){
+    	pull2(frontier_l, explored, temp);
+	}else{
+	    pull2(frontier_r, explored, temp);	
+	}
   }
 }
 
