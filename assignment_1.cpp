@@ -59,10 +59,12 @@ string print_state(struct State state){
 void print_states(vector<struct State> states,char* argv[]){
   ofstream myfile;
   myfile.open (argv[4]);
+  myfile << states[0].depth << endl;
   for(int i = states.size()-1; i >= 0; i--){
-    cout << print_state(states[i]) <</* states[i].depth << " " << states[i].cost << " "<< states[i].hcost <<*/ endl;
+    cout << print_state(states[i]) << states[i].depth <</* " " << states[i].cost << " "<< states[i].hcost << */endl;
     myfile << print_state(states[i]) << endl;
   }
+  cout << "Path length: " << states[0].depth << endl;
   myfile.close();
 }
 
@@ -272,15 +274,27 @@ bool bfs(struct State init_state, int& count){
   }
 }
 
-int heuristic(struct State state){
+int heuristic(struct State state, struct State init_state){
   int h = 0;
-  h = (state.r_bank.chickens + state.r_bank.wolves)/2;
+  if(init_state.r_bank.boat == true){
+    if(state.r_bank.chickens + state.r_bank.wolves < 3){
+      h = 1;
+    }else{
+      h = 3+((state.r_bank.chickens + state.r_bank.wolves-3)*2);
+    }
+  }else{
+    if(state.l_bank.chickens + state.l_bank.wolves < 3){
+      h = 1;
+    }else{
+      h = 3+((state.l_bank.chickens + state.l_bank.wolves-3)*2);
+    }
+  }
   return h;
 }
 
-void setCost(vector<struct State>& state){
+void setCost(vector<struct State>& state, struct State init_state){
   for(int i = 0; i < state.size(); i++){
-    state[i].hcost = heuristic(state[i]);
+    state[i].hcost = heuristic(state[i], init_state);
     state[i].cost = state[i].depth + state[i].hcost;
   }
 }
@@ -304,7 +318,7 @@ bool astar(struct State init_state, int& count){
     count++;
     explored.push_back(*(graph.back()));
     vector<struct State> temp = succ(graph.back());
-    setCost(temp);
+    setCost(temp, init_state);
     pull(frontier, explored, temp);
     sort(frontier.begin(), frontier.end(), compareCost);
   }
@@ -313,7 +327,6 @@ bool astar(struct State init_state, int& count){
 bool dls(struct State init_state, int& count, int limit){
   deque<struct State> frontier;
   deque<struct State> explored;
-  int depth = 0;
   struct State* curr_state;
   frontier.push_back(init_state);
   while(1){
@@ -342,7 +355,7 @@ bool dfs(struct State init_state, int& count){
 }
 
 bool iddfs(struct State init_state, int& count){
-  int curr_limit = 0;
+  int curr_limit = 1;
   int limit = INT_MAX;
   bool success;
   while(curr_limit < limit){
@@ -350,6 +363,7 @@ bool iddfs(struct State init_state, int& count){
     if(success){
       return true;
     }else{
+      cout << "Curr_limit: " << curr_limit << endl;
       curr_limit++;
       delete_graph();
     }
@@ -384,7 +398,8 @@ int main(int argc, char* argv[]){
   }else if(strcmp(argv[3],"astar")==0){
   	  success = astar(init_state, count);
   }else{
-  	cout<<"third argument should be either bfs,dfs,iddfs or a*!"<<endl;
+  	cout<<"third argument should be either bfs,dfs,iddfs or astar!"<<endl;
+    exit(1);
   }
 
   solution = form_solution();
