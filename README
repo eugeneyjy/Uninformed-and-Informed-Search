@@ -1,0 +1,2 @@
+Compile this program with g++ -std=c++11 assignment_1.cpp
+Run it with ./a.out <initial file> <goal file> <mode> <output file>
