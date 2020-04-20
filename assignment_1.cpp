@@ -61,7 +61,7 @@ void print_states(vector<struct State> states,char* argv[]){
   myfile.open (argv[4]);
   myfile << states[0].depth << endl;
   for(int i = states.size()-1; i >= 0; i--){
-    cout << print_state(states[i]) << states[i].depth <</* " " << states[i].cost << " "<< states[i].hcost << */endl;
+    cout << print_state(states[i]) << endl;
     myfile << print_state(states[i]) << endl;
   }
   cout << "Path length: " << states[0].depth << endl;
@@ -363,7 +363,6 @@ bool iddfs(struct State init_state, int& count){
     if(success){
       return true;
     }else{
-      cout << "Curr_limit: " << curr_limit << endl;
       curr_limit++;
       delete_graph();
     }
@@ -383,7 +382,6 @@ int main(int argc, char* argv[]){
   valid_argc(argc);
   struct State init_state;
   vector<struct State> solution;
-  int limit = 2147483647;
   bool success;
   int count = 0;
   read_file(1, argv, init_state);
@@ -392,7 +390,7 @@ int main(int argc, char* argv[]){
   if(strcmp(argv[3],"bfs")==0){
    success = bfs(init_state, count);
   }else if(strcmp(argv[3],"dfs")==0){
-  	  success = dls(init_state, count, limit);
+  	  success = dfs(init_state, count);
   }else if(strcmp(argv[3],"iddfs")==0){
   	  success = iddfs(init_state, count);
   }else if(strcmp(argv[3],"astar")==0){
